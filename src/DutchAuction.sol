@@ -32,4 +32,10 @@ contract DutchAuction {
         expireAt = block.timestamp + DURATION;
     }
 
+    function getPrice() public view returns (uint256) {
+        uint256 timeElapsed = block.timestamp - startAt;
+        uint256 discount = discountRate * timeElapsed;
+        return startingPrice - discount;
+    }
+
 }
