@@ -38,4 +38,20 @@ contract DutchAuction {
         return startingPrice - discount;
     }
 
+    function buy() external payable {
+        require(block.timestamp < expireAt, "Auction expired");
+
+        uint256 price = getPrice();
+        require(msg.value >= price, "Insufficient funds");
+
+        nft.transferFrom(seller, msg.sender, tokenId);
+        uint256 refund = msg.value - price;
+        if (refund > 0) {
+            (bool success, ) = payable(msg.sender).call{value: refund}("");
+            require(success, "Refund failed");
+        }
+        (bool success, ) = seller.call{value: address(this).balance}("");
+        require(success, "Transfer to seller failed");
+    }
+
 }
