@@ -4,6 +4,11 @@ interface IERC721 {
     function transferFrom(address from, address to, uint256 tokenId) external;
 }
 contract DutchAuction {
+    error InsufficientFunds();
+    error StartingPriceLessThanDiscount();
+    error AuctionExpired();
+    error TransactionFailed();
+
     uint256 public constant DURATION = 7 days;
 
     IERC721 public immutable nft;
@@ -21,7 +26,7 @@ contract DutchAuction {
         uint256 _startingPrice,
         uint256 _discountRate
     ) {
-        require(_startingPrice >= _discountRate * DURATION, "Starting price < discount");
+        require(_startingPrice >= _discountRate * DURATION, StartingPriceLessThanDiscount());
 
         nft = IERC721(_nft);
         tokenId = _tokenId;
@@ -39,19 +44,19 @@ contract DutchAuction {
     }
 
     function buy() external payable {
-        require(block.timestamp < expireAt, "Auction expired");
+        require(block.timestamp < expireAt, AuctionExpired());
 
         uint256 price = getPrice();
-        require(msg.value >= price, "Insufficient funds");
+        require(msg.value >= price, InsufficientFunds());
 
         nft.transferFrom(seller, msg.sender, tokenId);
         uint256 refund = msg.value - price;
         if (refund > 0) {
             (bool success, ) = payable(msg.sender).call{value: refund}("");
-            require(success, "Refund failed");
+            require(success, TransactionFailed());
         }
         (bool success, ) = seller.call{value: address(this).balance}("");
-        require(success, "Transfer to seller failed");
+        require(success, TransactionFailed());
     }
 
 }
