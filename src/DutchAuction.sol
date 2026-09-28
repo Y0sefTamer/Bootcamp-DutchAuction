@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
+
 interface IERC721 {
     function transferFrom(address from, address to, uint256 tokenId) external;
 }
+
 contract DutchAuction {
     error InsufficientFunds();
     error StartingPriceLessThanDiscount();
@@ -20,12 +22,7 @@ contract DutchAuction {
     uint256 public immutable expireAt;
     uint256 public immutable discountRate;
 
-    constructor(
-        address _nft,
-        uint256 _tokenId,
-        uint256 _startingPrice,
-        uint256 _discountRate
-    ) {
+    constructor(address _nft, uint256 _tokenId, uint256 _startingPrice, uint256 _discountRate) {
         require(_startingPrice >= _discountRate * DURATION, StartingPriceLessThanDiscount());
 
         nft = IERC721(_nft);
@@ -52,11 +49,10 @@ contract DutchAuction {
         nft.transferFrom(seller, msg.sender, tokenId);
         uint256 refund = msg.value - price;
         if (refund > 0) {
-            (bool success, ) = payable(msg.sender).call{value: refund}("");
+            (bool success,) = payable(msg.sender).call{value: refund}("");
             require(success, TransactionFailed());
         }
-        (bool success, ) = seller.call{value: address(this).balance}("");
+        (bool success,) = seller.call{value: address(this).balance}("");
         require(success, TransactionFailed());
     }
-
 }
